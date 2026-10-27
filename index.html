@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ShopDesk – Small Business Manager</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#f3f5f7;--sf:#fff;--tx:#14202b;--mu:#66727e;--bd:#dde3e8;--ac:#0f6b6b;--bad:#c0392b;--ok:#23804a;--wn:#a86a0a;--f:#9aa5af;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10161c;--sf:#19212a;--tx:#e8edf1;--mu:#8e9aa6;--bd:#2b3640;--ac:#4cc2c2;--bad:#ef7a6c;--ok:#5ec27d;--wn:#e0a64a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10161c;--sf:#19212a;--tx:#e8edf1;--mu:#8e9aa6;--bd:#2b3640;--ac:#4cc2c2;--bad:#ef7a6c;--ok:#5ec27d;--wn:#e0a64a;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}body{font:15px/1.5 "Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--tx)}
+.app{display:flex;min-height:100vh}
+nav{width:216px;background:var(--sf);border-right:1px solid var(--bd);padding:16px 10px;display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+nav h1{font-size:18px;margin:0 8px 14px;letter-spacing:-.01em}
+nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--tx);text-decoration:none;cursor:pointer}
+nav a.on{background:var(--bg);font-weight:700}nav i{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+main{flex:1;padding:20px;min-width:0;max-width:1100px}
+header{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px}
+header div{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.seg{display:inline-flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden}.seg button{background:var(--sf);color:var(--tx);border-radius:0;font-weight:500}.seg button.on{background:var(--ac);color:var(--sf);font-weight:700}
+h2{margin:0;font-size:22px;letter-spacing:-.01em}h3{margin:22px 0 8px;font-size:15px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.card,.box{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:12px}
+.card{border-top:4px solid var(--fc,var(--f))}.card b{font-size:24px}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
+label{display:block;font-size:13px;color:var(--mu);margin:6px 0}
+input,select,textarea,button{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:6px 9px;max-width:100%}
+label input,label select,label textarea{display:block;width:100%;margin-top:2px}
+button{cursor:pointer;background:var(--ac);color:var(--sf);border-color:transparent;font-weight:500}
+button:disabled{opacity:.45;cursor:default}button.lk{background:none;color:var(--ac);padding:0 4px;border:0}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.sc{overflow-x:auto}table{width:100%;border-collapse:collapse;background:var(--sf);border:1px solid var(--bd);font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--bd);white-space:nowrap}th{color:var(--mu);font-weight:500}
+td input{width:84px;padding:3px 6px}
+.mu{color:var(--mu)}.row{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd)}
+.tg{font-size:12px;padding:1px 8px;border-radius:99px;border:1px solid currentColor;margin-left:4px}.bad{color:var(--bad)}.ok{color:var(--ok)}.wn{color:var(--wn)}
+details{padding:2px 0}#t{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--tx);color:var(--bg);padding:8px 14px;border-radius:10px;z-index:9}
+@media(max-width:760px){.app{flex-direction:column}nav{width:auto;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--bd)}nav h1{display:none}nav a{white-space:nowrap}}
+</style>
+</head>
+<body>
+<div class="app"><nav id="nav"></nav><main><header><h2 id="ttl"></h2><div id="who"></div></header><section id="v"></section></main></div>
+<div id="t" hidden></div>
+<script>
+/* ShopDesk – classes follow the Lucid model: Store, StoreOwner, Employee, Product, InventoryRecord, RestockAlert,
+   Sale, SaleItem, Customer, Supplier, PerformanceRecord, Ledger/Transaction/Revenue/Expense, BudgetThreshold,
+   Schedule, EmployeeShift, ComplaintCase, SupportRequest, ReturnRequest, Report types, ReportFilter, DashboardSummary. */
+const KEY="shopdesk-v2",$=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const day=(n=0)=>{const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
+const M=n=>"$"+(+n||0).toFixed(2),uid=p=>p+Math.random().toString(36).slice(2,7),nm=(l,i)=>(l.find(x=>x.id==i)||{}).name;
+const gap=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+const seed=()=>{const d=day,
+sup=[["s1","Fresh Farms","orders@freshfarms.example",3,"Net 30","Active"],["s2","DryGoods Co","555-0142",7,"Net 15","Active"],["s3","Beverage Direct","sales@bevdirect.example",5,"Net 15","Active"],["s4","CleanCo Supply","555-0177",10,"Net 30","Active"],["s5","Arctic Foods","555-0190",6,"Net 30","Inactive"]].map(a=>({id:a[0],name:a[1],contact:a[2],lead:a[3],terms:a[4],status:a[5]})),
+prod=[["p1","Whole milk 1L","Dairy","s1",6,10,d(5),2.49],["p2","Sourdough loaf","Bakery","s1",14,6,d(2),5.5],["p3","Pasta 500g","Pantry","s2",40,15,d(300),1.99],["p4","Cheddar block","Dairy","s1",22,8,d(12),4.75],["p5","Free-range eggs 12","Dairy","s1",3,12,d(9),3.99],["p6","Basmati rice 2kg","Pantry","s2",28,10,d(400),6.49],["p7","Tomato sauce","Pantry","s2",9,12,d(250),2.29],["p8","Orange juice 1L","Beverages","s3",18,10,d(20),3.49],["p9","Sparkling water 6-pack","Beverages","s3",30,12,d(180),4.99],["p10","Cold brew coffee","Beverages","s3",0,6,d(8),3.75],["p11","Dish soap","Household","s4",15,5,"",3.25],["p12","Paper towels","Household","s4",4,8,"",5.99],["p13","Granola bars 12-pack","Snacks","s2",33,10,d(90),5.25],["p14","Potato chips","Snacks","s2",25,10,d(60),2.99],["p15","Frozen peas 1kg","Frozen","s5",11,6,d(200),3.19],["p16","Yogurt 500g","Dairy","s1",7,10,d(3),3.29],["p17","Bagged salad","Produce","s1",10,5,d(-1),3.99]].map(a=>({id:a[0],name:a[1],cat:a[2],sup:a[3],qty:a[4],min:a[5],exp:a[6],price:a[7]})),
+cu=[[1,"Ava Martin","555-0101","ava@example.com",200],[2,"Ben Carter","555-0102","ben@example.com",150],[3,"Chloe Nguyen","555-0103","chloe@example.com",120],[4,"Diego Alvarez","555-0104","diego@example.com",90],[5,"Emma Dubois","555-0105","emma@example.com",60],[6,"Farid Haddad","555-0106","farid@example.com",45],[7,"Grace Okafor","555-0107","grace@example.com",20],[8,"Hiro Tanaka","555-0108","hiro@example.com",5]].map(a=>({id:"c"+a[0],name:a[1],phone:a[2],email:a[3],created:d(-a[4])})),
+em=[["e1","Sam Lee","Cashier"],["e2","Jo Park","Stock clerk"],["e3","Priya Shah","Cashier"],["e4","Marc Tremblay","Shift lead"],["e5","Lena Fischer","Part-time"]].map(a=>({id:a[0],name:a[1],role:a[2]})),
+sales=[],tx=[],shifts=[];
+for(let i=0;i<34;i++){const dt=d(i<4?0:-((i*7)%46)),items=[];
+ for(let k=1;k<=1+i%3;k++){const p=prod[(i*3+k*5)%prod.length];items.push({p:p.id,q:1+(i+k)%4,price:p.price})}
+ const total=+items.reduce((a,x)=>a+x.q*x.price,0).toFixed(2),sid="S"+(1001+i);
+ sales.push({id:sid,date:dt,total,pay:i%2?"Card":"Cash",cust:i%3?cu[i%cu.length].id:"",by:em[i%5].id,items});
+ tx.push({id:"t"+sid,type:"Revenue",date:dt,amt:total,cat:"Sales",desc:"Sale "+sid})}
+[[-30,1500,"Rent","Rent, last month",-25,1,""],[-2,1500,"Rent","Rent, this month",5,0,""],[-14,1800,"Payroll","Bi-weekly payroll",-14,1,""],[-20,210,"Utilities","Electricity and water",-6,0,""],[0,320,"Supplies","Cleaning and packaging",-1,1,"s4"],[0,260,"Supplies","Shelving",4,0,"s4"],[0,90,"Marketing","Flyers",null,1,""],[-8,640,"Inventory","Dairy restock invoice",22,0,"s1"],[-18,415,"Inventory","Beverage restock",-3,0,"s3"]].forEach((a,i)=>tx.push({id:"tx"+i,type:"Expense",date:d(a[0]),amt:a[1],cat:a[2],desc:a[3],due:a[4]==null?"":d(a[4]),paid:!!a[5],sup:a[6]}));
+tx.push({id:"txR",type:"Expense",date:d(-3),amt:1.5,cat:"Refunds",desc:"Return R1004",due:"",paid:true,sup:""});
+for(let n=0;n<7;n++)for(let k=0;k<3;k++)shifts.push({id:"h"+n+k,emp:em[(n+k)%5].id,date:d(n),start:["07:00","12:00","16:00"][k],end:["15:00","20:00","22:00"][k]});
+const by=(a,b)=>a.date.localeCompare(b.date);
+return{store:"Corner Market",suppliers:sup,products:prod,customers:cu,employees:em,shifts,published:true,sales:sales.sort(by),tx:tx.sort(by),
+budgets:{Supplies:400,Rent:1500,Marketing:200,Utilities:300},alerts:[],
+perf:[["s1",-20,-17,100,100,"Good"],["s1",-12,-8,80,72,"Fair"],["s2",-25,-17,200,200,"Good"],["s2",-10,-4,150,120,"Poor"],["s3",-14,-9,60,60,"Good"],["s3",-6,-2,48,40,"Fair"],["s4",-30,-18,40,40,"Good"],["s5",-40,-32,90,60,"Poor"]].map((a,i)=>({id:"r"+i,sup:a[0],od:d(a[1]),dd:d(a[2]),qo:a[3],qr:a[4],cond:a[5],delay:Math.max(0,gap(d(a[1]),d(a[2]))-sup.find(x=>x.id==a[0]).lead),fill:Math.min(1,a[4]/a[3])})),
+cases:[{id:"C1001",cust:"c2",cat:"Product quality",desc:"Yogurt was past its date",status:"Open",date:d(-1)},{id:"C1002",cust:"c3",cat:"Billing",desc:"Charged twice on card",status:"Escalated",date:d(-4)},{id:"C1003",cust:"c1",cat:"Service",desc:"Long wait at the register",status:"Resolved",date:d(-12)},{id:"C1004",cust:"",cat:"Store",desc:"Spill near the entrance",status:"Open",date:d(0)},{id:"C1005",cust:"c5",cat:"Product quality",desc:"Damaged packaging on pasta",status:"Escalated",date:d(-6)}],
+reqs:[{id:"Q1001",cust:"c4",subject:"Do you stock oat milk?",desc:"",notes:["Told customer we can order it","Customer wants 2 cartons"],date:d(-2)},{id:"Q1002",cust:"c6",subject:"Update email address",desc:"",notes:[],date:d(-5)},{id:"Q1003",cust:"c7",subject:"Gift card balance",desc:"",notes:["Balance checked"],date:d(-9)},{id:"Q1004",cust:"c8",subject:"Bulk order pricing",desc:"",notes:[],date:d(0)}],
+returns:[{id:"R1001",sale:"S1003",amt:1.5,reason:"Wrong item (eligible)",status:"Pending",date:d(0)},{id:"R1002",sale:"S1014",amt:1.5,reason:"Changed mind, sale over 30 days old (should be rejected)",status:"Pending",date:d(0)},{id:"R1003",sale:"S1002",amt:999,reason:"Amount above sale total (should be rejected)",status:"Pending",date:d(0)},{id:"R1004",sale:"S1005",amt:1.5,reason:"Damaged item",status:"Refunded",date:d(-3)}],
+refreshed:new Date().toISOString(),role:"owner",me:"e1"}};
+let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}S=S||seed();
+let cart=[],cust="",pay="Card",RF={type:"sales",start:day(-30),end:day(),cat:""};
+const owner=()=>S.role=="owner",low=p=>p.qty<=p.min,near=p=>p.exp&&p.exp<=day(14);
+const cash=()=>S.tx.reduce((a,t)=>a+(t.type=="Revenue"?t.amt:-t.amt),0);
+const spent=c=>S.tx.filter(t=>t.type=="Expense"&&t.cat==c&&t.date.slice(0,7)==day().slice(0,7)).reduce((a,t)=>a+t.amt,0);
+function sync(){S.products.forEach(p=>{const o=S.alerts.find(a=>a.pid==p.id&&(a.status=="Open"||a.status=="Ordered"));
+ if(low(p)&&!o)S.alerts.push({id:uid("a"),pid:p.id,date:day(),status:"Open",info:"Reorder "+Math.max(p.min*2-p.qty,1)+" from "+(nm(S.suppliers,p.sup)||"supplier")});
+ if(!low(p)&&o)o.status="Resolved"});S.refreshed=new Date().toISOString();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+let tt;function toast(m){const t=$("#t");t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,3200)}
+const tag=(t,c)=>`<span class="tg ${c||""}">${t}</span>`,card=(a,b,c)=>`<div class=card style="--fc:${c||"var(--f)"}"><div class=mu>${a}</div><b>${b}</b></div>`;
+const opts=(l,s)=>l.map(x=>`<option value="${x.id}"${x.id==s?" selected":""}>${esc(x.name)}</option>`).join("");
+const tbl=(h,r)=>r.length?`<div class=sc><table><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr>${r.map(x=>`<tr>${x.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</table></div>`:`<p class=mu>Nothing here yet.</p>`;
+const inp=(n,l,t,x)=>`<label>${l}<input name=${n} type=${t||"text"} ${x||""}></label>`;
+const btn=(a,i,l,c)=>`<button class="${c||"lk"}" data-a=${a} data-i="${i}">${l}</button>`;
+const locked=()=>`<p class=box>This section is for the store owner. Switch role at the top right.</p>`;
+const alertsHtml=()=>tbl(["Product","Reorder information","Raised","Status",""],S.alerts.filter(a=>a.status=="Open").map(a=>[esc(nm(S.products,a.pid)),esc(a.info),a.date,tag("Open","wn"),owner()?btn("ordered",a.id,"Mark as ordered"):""]));
+const V={};
+V.dash=()=>{const ts=S.sales.filter(s=>s.date==day()).reduce((a,s)=>a+s.total,0),none=!S.products.length&&!S.sales.length;
+ return `<div class=cards>${card("Sales today",M(ts),"#5fae5a")}${card("Low stock",S.products.filter(low).length,"#5b9bd5")}${card("Near expiry (14 days)",S.products.filter(near).length,"#5b9bd5")}${card("Pending restock",S.alerts.filter(a=>a.status=="Open").length,"#5b9bd5")}${owner()?card("Ledger balance",M(cash()),"#e3b92c"):""}</div>
+ <p class=mu>${none?tag("Some data unavailable","wn"):""} Last refreshed ${new Date(S.refreshed).toLocaleTimeString()} ${btn("refresh","","Refresh")}</p><h3>Restock alerts</h3>${alertsHtml()}`};
+V.sales=()=>`<div class=g2><form class=box data-f=addCart><h3 style="margin-top:0">Add item</h3><label>Product<select name=p>${S.products.map(p=>`<option value=${p.id}>${esc(p.name)} (${p.qty} left, ${M(p.price)})</option>`).join("")}</select></label>${inp("q","Quantity","number",'min=1 value=1')}<button>Add to sale</button></form>
+<div class=box><h3 style="margin-top:0">Current sale</h3>${cart.map((c,i)=>`<div class=row><span>${esc(nm(S.products,c.p))} × ${c.q}</span><span>${M(c.q*c.price)} ${btn("rmCart",i,"remove")}</span></div>`).join("")||`<p class=mu>No items yet.</p>`}
+<label>Customer<select data-c=cust><option value="">Walk-in</option>${opts(S.customers,cust)}</select></label><label>Payment<select data-c=pay><option${pay=="Card"?" selected":""}>Card</option><option${pay=="Cash"?" selected":""}>Cash</option></select></label>
+<p><b>Total ${M(cart.reduce((a,c)=>a+c.q*c.price,0))}</b> <button data-a=checkout ${cart.length?"":"disabled"}>Complete sale</button></p></div></div>
+<h3>Recent sales</h3>${tbl(["Sale","Date","Customer","Payment","Items","Total"],S.sales.slice(-10).reverse().map(s=>[s.id,s.date,esc(nm(S.customers,s.cust)||"Walk-in"),s.pay,s.items.length,M(s.total)]))}`;
+V.inventory=()=>`<form class=box data-f=addProduct><div class=g2>${inp("name","Product name","text","required")}${inp("cat","Category")}${inp("qty","Quantity on hand","number",'min=0 value=0 required')}${inp("min","Reorder at","number",'min=0 value=5 required')}${inp("price","Price","number",'step=0.01 min=0 required')}${inp("exp","Expiry date","date")}<label>Supplier<select name=sup>${opts(S.suppliers)}</select></label></div><button>Add product</button></form>
+<h3>Products</h3>${tbl(["Product","Category","Supplier","On hand","Reorder at","Expiry","Price","Status"],S.products.map(p=>[esc(p.name),esc(p.cat),esc(nm(S.suppliers,p.sup)||"–"),`<input type=number min=0 value=${p.qty} data-c=qty data-i=${p.id}>`,p.min,p.exp||"–",M(p.price),(low(p)?tag("Low stock","bad"):tag("OK","ok"))+(near(p)?tag("Near expiry","wn"):"")]))}<h3>Restock alerts</h3>${alertsHtml()}`;
+function rep(){const f=RF,R=d=>d>=f.start&&d<=f.end,P=S.products.filter(p=>!f.cat||p.cat==f.cat);
+ if(f.type=="sales"){const s=S.sales.filter(x=>R(x.date)&&(!f.cat||x.items.some(i=>(S.products.find(p=>p.id==i.p)||{}).cat==f.cat))),t=s.reduce((a,x)=>a+x.total,0);
+  return{t:"Sales report",sum:[["Total sales",M(t)],["Number of sales",s.length],["Average sale",M(s.length?t/s.length:0)]],h:["Date","Sale","Payment","Total"],r:s.map(x=>[x.date,x.id,x.pay,M(x.total)]),n:s.length}}
+ if(f.type=="inventory")return{t:"Inventory report",sum:[["Products",P.length],["Units on hand",P.reduce((a,p)=>a+p.qty,0)],["Low stock",P.filter(low).length]],h:["Product","Category","On hand","Reorder at"],r:P.map(p=>[p.name,p.cat,p.qty,p.min]),n:P.length};
+ if(f.type=="expiry"){const e=P.filter(near),l=P.filter(low);return{t:"Expiry and restock report",sum:[["Near expiry",e.length],["Need restock",l.length]],h:["Product","Issue","Expiry","On hand"],r:[...e.map(p=>[p.name,"Near expiry",p.exp,p.qty]),...l.map(p=>[p.name,"Low stock",p.exp||"–",p.qty])],n:e.length+l.length}}
+ const t=S.tx.filter(x=>R(x.date)),a=ty=>t.filter(x=>x.type==ty).reduce((s,x)=>s+x.amt,0);
+ return{t:"Financial report",sum:[["Revenue",M(a("Revenue"))],["Expenses",M(a("Expense"))],["Net",M(a("Revenue")-a("Expense"))]],h:["Date","Type","Category","Amount"],r:t.map(x=>[x.date,x.type,x.cat,M(x.amt)]),n:t.length}}
+V.reports=()=>{if(!owner()&&RF.type=="financial")RF.type="sales";const r=rep();
+ return `<form class=box data-f=report><div class=g2><label>Report<select name=type>${[["sales","Sales"],["inventory","Inventory"],["expiry","Expiry and restock"],...(owner()?[["financial","Financial"]]:[])].map(o=>`<option value=${o[0]}${RF.type==o[0]?" selected":""}>${o[1]}</option>`).join("")}</select></label>${inp("start","From","date","value="+RF.start)}${inp("end","To","date","value="+RF.end)}<label>Category<select name=cat><option value="">All</option>${[...new Set(S.products.map(p=>p.cat))].map(c=>`<option${RF.cat==c?" selected":""}>${esc(c)}</option>`).join("")}</select></label></div><button>Generate report</button></form>
+ <h3>${r.t}</h3>${r.n?`<div class=cards>${r.sum.map(s=>card(s[0],s[1],"#5fae5a")).join("")}</div><h3>Details ${btn("export","","Export CSV","")}</h3>${tbl(r.h,r.r.map(x=>x.map(esc)))}`:`<p class=box>No data for these filters. Widen the dates or pick another category.</p>`}`};
+V.partners=()=>{const sp=id=>{const l=S.perf.filter(p=>p.sup==id);return l.length?Math.round(100*l.reduce((a,p)=>a+p.fill,0)/l.length)+"% fill rate":"No records"};
+ return `<div class=g2><form class=box data-f=addSup><h3 style="margin-top:0">Add supplier</h3>${inp("name","Name","text","required")}${inp("contact","Contact")}${inp("lead","Lead time (days)","number","min=0 value=3")}${inp("terms","Payment terms")}<button>Add supplier</button></form>
+ <form class=box data-f=addPerf><h3 style="margin-top:0">Log a delivery</h3><label>Supplier<select name=sup>${opts(S.suppliers)}</select></label>${inp("od","Ordered on","date","required value="+day(-5))}${inp("dd","Delivered on","date","required value="+day())}${inp("qo","Quantity ordered","number","min=1 required")}${inp("qr","Quantity received","number","min=0 required")}<label>Condition<select name=cond><option>Good</option><option>Fair</option><option>Poor</option></select></label><button>Save delivery</button></form></div>
+ <h3>Suppliers</h3>${tbl(["Supplier","Contact","Lead time","Terms","Performance","Status"],S.suppliers.map(s=>[esc(s.name),esc(s.contact),s.lead+" days",esc(s.terms),sp(s.id),tag(s.status,s.status=="Active"?"ok":"")+btn("togSup",s.id,"change")]))}
+ <h3>Deliveries</h3>${tbl(["Supplier","Delivered","Ordered / received","Delay","Fill rate","Condition",""],S.perf.map(p=>[esc(nm(S.suppliers,p.sup)),p.dd,p.qo+" / "+p.qr,p.delay+" days",Math.round(p.fill*100)+"%",p.cond,p.qo!=p.qr?tag("Discrepancy","bad"):""]))}
+ <h3>Customers</h3><form class=box data-f=addCust><div class=g2>${inp("name","Name","text","required")}${inp("phone","Phone")}${inp("email","Email","email")}</div><button>Add customer</button></form>
+ ${tbl(["Customer","Phone","Email","Since","Purchases"],S.customers.map(c=>{const s=S.sales.filter(x=>x.cust==c.id);return[esc(c.name),esc(c.phone),esc(c.email),c.created,`<details><summary>${s.length} (${M(s.reduce((a,x)=>a+x.total,0))})</summary>${s.map(x=>`${x.date} · ${x.id} · ${M(x.total)}`).join("<br>")}</details>`]}))}`};
+V.accounting=()=>{if(!owner())return locked();const rv=S.tx.filter(t=>t.type=="Revenue").reduce((a,t)=>a+t.amt,0);
+ return `<div class=cards>${card("Balance",M(cash()),"#e3b92c")}${card("Revenue",M(rv),"#e3b92c")}${card("Expenses",M(rv-cash()),"#e3b92c")}</div>
+ <div class=g2><form class=box data-f=addTx><h3 style="margin-top:0">Record a transaction</h3><label>Type<select name=type><option>Expense</option><option>Revenue</option></select></label>${inp("amt","Amount","number","step=0.01 min=0.01 required")}${inp("cat","Category","text","required")}${inp("desc","Description")}${inp("due","Due date (expenses)","date")}<label>Supplier<select name=sup><option value="">None</option>${opts(S.suppliers)}</select></label><button>Add to ledger</button></form>
+ <form class=box data-f=addBudget><h3 style="margin-top:0">Monthly budget limits</h3>${Object.keys(S.budgets).map(c=>`<div class=row><span>${esc(c)}</span><span>${M(spent(c))} of ${M(S.budgets[c])} ${spent(c)>S.budgets[c]?tag("Over limit","bad"):""}</span></div>`).join("")}${inp("cat","Category","text","required")}${inp("lim","Limit","number","min=0 required")}<button>Save limit</button></form></div>
+ <h3>Ledger</h3>${tbl(["Date","Type","Category","Description","Supplier","Amount","Status"],S.tx.slice().reverse().map(t=>[t.date,t.type,esc(t.cat),esc(t.desc),esc(nm(S.suppliers,t.sup)||"–"),M(t.amt),t.type=="Expense"&&t.due&&!t.paid?(t.due<day()?tag("Overdue","bad"):tag("Due "+t.due,"wn"))+btn("paid",t.id,"mark paid"):""]))}`};
+V.schedule=()=>{const sh=S.shifts.slice().sort((a,b)=>a.date.localeCompare(b.date)),mine=sh.filter(h=>h.emp==S.me);
+ if(!owner())return S.published?`<h3 style="margin-top:0">Your shifts</h3>${tbl(["Date","Start","End"],mine.map(h=>[h.date,h.start,h.end]))}`:`<p class=box>The schedule has not been published yet.</p>`;
+ return `<form class=box data-f=addShift><div class=g2><label>Employee<select name=emp>${opts(S.employees)}</select></label>${inp("date","Date","date","required value="+day(1))}${inp("start","Start","time","required value=09:00")}${inp("end","End","time","required value=17:00")}</div><button>Add shift</button></form>
+ <p>${S.published?tag("Published","ok"):tag("Draft","wn")} <button data-a=publish>${S.published?"Publish changes":"Publish schedule"}</button></p>${tbl(["Employee","Date","Start","End",""],sh.map(h=>[esc(nm(S.employees,h.emp)),h.date,`<input type=time value=${h.start} data-c=ss data-i=${h.id}>`,`<input type=time value=${h.end} data-c=se data-i=${h.id}>`,btn("delShift",h.id,"delete")]))}`};
+V.support=()=>{const cu=o=>`<label>Customer<select name=cust><option value="">Unknown</option>${opts(S.customers,o)}</select></label>`;
+ return `<div class=g2><form class=box data-f=addCase><h3 style="margin-top:0">New complaint case</h3>${cu()}${inp("cat","Category","text","required")}<label>Description<textarea name=desc required></textarea></label><button>Create case</button></form>
+ <form class=box data-f=addReq><h3 style="margin-top:0">Log a support request</h3>${cu()}${inp("subject","Subject","text","required")}<label>Description<textarea name=desc></textarea></label><button>Log request</button></form>
+ <form class=box data-f=addRet><h3 style="margin-top:0">Return request</h3><label>Sale<select name=sale>${S.sales.map(s=>`<option value=${s.id}>${s.id} · ${s.date} · ${M(s.total)}</option>`).join("")}</select></label>${inp("amt","Refund amount","number","step=0.01 min=0.01 required")}${inp("reason","Reason","text","required")}<button ${S.sales.length?"":"disabled"}>Request return</button></form></div>
+ <h3>Complaint cases</h3>${tbl(["Case","Customer","Category","Description","Status",""],S.cases.map(c=>[c.id,esc(nm(S.customers,c.cust)||"–"),esc(c.cat),esc(c.desc),tag(c.status,c.status=="Resolved"?"ok":c.status=="Escalated"?"bad":"wn"),c.status=="Resolved"?"":(c.status=="Open"?btn("escalate",c.id,"escalate to owner"):"")+(owner()?btn("resolve",c.id,"resolve"):"")]))}
+ <h3>Support requests</h3>${tbl(["Date","Customer","Subject","Notes","Add note"],S.reqs.map(r=>[r.date,esc(nm(S.customers,r.cust)||"–"),esc(r.subject),esc(r.notes.join("; ")||"–"),`<input placeholder="Note" data-c=note data-i=${r.id}>`]))}
+ <h3>Returns</h3>${tbl(["Return","Sale","Reason","Amount","Status",""],S.returns.map(r=>[r.id,r.sale,esc(r.reason),M(r.amt),tag(r.status,r.status=="Refunded"?"ok":"wn"),r.status=="Pending"?btn("refund",r.id,"check and refund"):""]))}`};
+const TABS=[["dash","Dashboard","#5fae5a"],["sales","Sales","#9aa5af"],["inventory","Inventory","#5b9bd5"],["reports","Reports","#5fae5a"],["partners","Suppliers and customers","#e8943a"],["accounting","Accounting","#e3b92c"],["schedule","Scheduling","#8e6bbf"],["support","Customer support","#d9628f"]];
+let tab=TABS.some(t=>"#"+t[0]==location.hash)?location.hash.slice(1):"dash";
+function render(){const t=TABS.find(x=>x[0]==tab);$("#ttl").textContent=t[1];
+ $("#nav").innerHTML=`<h1>${esc(S.store)}</h1>`+TABS.map(x=>`<a data-t=${x[0]} class="${x[0]==tab?"on":""}"><i style="background:${x[2]}"></i>${x[1]}${x[0]=="accounting"&&!owner()?" (owner only)":""}</a>`).join("");
+ $("#who").innerHTML=`<span class=seg><button class="${owner()?"on":""}" data-a=role data-i=owner>Store owner</button><button class="${owner()?"":"on"}" data-a=role data-i=employee>Employee</button></span>`+(owner()?"":`<span class=mu>Signed in as</span><select data-c=me>${opts(S.employees,S.me)}</select>`)+`<button class=lk data-a=reset>Reset sample data</button><button class=lk data-a=clear>Clear all data</button>`;
+ $("#v").innerHTML=V[tab]()}
+const H={
+addCart(f){const p=S.products.find(x=>x.id==f.p),q=+f.q,have=cart.filter(c=>c.p==p.id).reduce((a,c)=>a+c.q,0);if(have+q>p.qty)return"Only "+p.qty+" in stock.";cart.push({p:p.id,q,price:p.price})},
+addProduct(f){S.products.push({id:uid("p"),name:f.name,cat:f.cat||"General",sup:f.sup,qty:+f.qty,min:+f.min,exp:f.exp,price:+f.price})},
+report(f){RF=f},
+addSup(f){S.suppliers.push({id:uid("s"),name:f.name,contact:f.contact,lead:+f.lead,terms:f.terms,status:"Active"})},
+addPerf(f){const s=S.suppliers.find(x=>x.id==f.sup);if(!s)return"Add a supplier first.";if(f.dd<f.od)return"Delivery date must be after the order date.";S.perf.push({id:uid("r"),sup:f.sup,od:f.od,dd:f.dd,qo:+f.qo,qr:+f.qr,cond:f.cond,delay:Math.max(0,gap(f.od,f.dd)-s.lead),fill:Math.min(1,f.qr/f.qo)})},
+addCust(f){S.customers.push({id:uid("c"),name:f.name,phone:f.phone,email:f.email,created:day()})},
+addTx(f){if(!owner())return;S.tx.push({id:uid("t"),type:f.type,date:day(),amt:+f.amt,cat:f.cat,desc:f.desc,due:f.type=="Expense"?f.due:"",sup:f.sup,paid:false});if(f.type=="Expense"&&S.budgets[f.cat]!=null&&spent(f.cat)>S.budgets[f.cat])return"This expense puts "+f.cat+" over its monthly limit."},
+addBudget(f){S.budgets[f.cat]=+f.lim},
+addShift(f){if(f.end<=f.start)return"End time must be after start time.";S.shifts.push({id:uid("h"),emp:f.emp,date:f.date,start:f.start,end:f.end})},
+addCase(f){S.cases.push({id:uid("C"),cust:f.cust,cat:f.cat,desc:f.desc,status:"Open",date:day()})},
+addReq(f){S.reqs.push({id:uid("Q"),cust:f.cust,subject:f.subject,desc:f.desc,notes:[],date:day()})},
+addRet(f){S.returns.push({id:uid("R"),sale:f.sale,amt:+f.amt,reason:f.reason,status:"Pending",date:day()})}};
+const A={
+refresh(){},role(i){S.role=i;toast(i=="owner"?"Viewing as store owner.":"Viewing as employee.")},reset(){S=seed();cart=[];toast("Sample data restored.")},clear(){S=Object.assign(seed(),{suppliers:[],products:[],customers:[],employees:[],shifts:[],published:false,sales:[],tx:[],budgets:{},perf:[],cases:[],reqs:[],returns:[]});cart=[];toast("All data cleared. Use this to test empty screens.")},
+ordered(i){if(owner())S.alerts.find(a=>a.id==i).status="Ordered"},
+rmCart(i){cart.splice(i,1)},
+checkout(){const items=cart.map(c=>({p:c.p,q:c.q,price:c.price})),total=items.reduce((a,c)=>a+c.q*c.price,0),sid=uid("S");
+ items.forEach(i=>S.products.find(p=>p.id==i.p).qty-=i.q);S.sales.push({id:sid,date:day(),total,pay,cust,by:owner()?"owner":S.me,items});
+ S.tx.push({id:uid("t"),type:"Revenue",date:day(),amt:total,cat:"Sales",desc:"Sale "+sid});cart=[];toast("Sale completed.")},
+export(){const r=rep(),csv=[r.h,...r.r].map(l=>l.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n"),a=document.createElement("a");
+ a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=r.t.toLowerCase().replace(/\W+/g,"-")+".csv";a.click()},
+togSup(i){const s=S.suppliers.find(x=>x.id==i);s.status=s.status=="Active"?"Inactive":"Active"},
+paid(i){S.tx.find(t=>t.id==i).paid=true},
+publish(){S.published=true;toast("Schedule published.")},
+delShift(i){S.shifts=S.shifts.filter(h=>h.id!=i)},
+escalate(i){S.cases.find(c=>c.id==i).status="Escalated"},
+resolve(i){if(owner())S.cases.find(c=>c.id==i).status="Resolved"},
+refund(i){const r=S.returns.find(x=>x.id==i),s=S.sales.find(x=>x.id==r.sale);
+ if(gap(s.date,day())>30||r.amt>s.total){r.status="Rejected";return toast("Not eligible: returns must be within 30 days and not exceed the sale total.")}
+ r.status="Refunded";S.tx.push({id:uid("t"),type:"Expense",date:day(),amt:r.amt,cat:"Refunds",desc:"Return "+r.id,paid:true});toast("Refund processed.")}};
+const C={role:v=>S.role=v,me:v=>S.me=v,cust:v=>cust=v,pay:v=>pay=v,
+qty(i,v){const p=S.products.find(x=>x.id==i);p.qty=Math.max(0,+v)},
+ss(i,v){const h=S.shifts.find(x=>x.id==i);if(v>=h.end)return toast("Start must be before end.");h.start=v},
+se(i,v){const h=S.shifts.find(x=>x.id==i);if(v<=h.start)return toast("End must be after start.");h.end=v},
+note(i,v){if(v.trim())S.reqs.find(r=>r.id==i).notes.push(v.trim())}};
+document.addEventListener("click",e=>{const n=e.target.closest("[data-t]");if(n){tab=n.dataset.t;location.hash=tab;return render()}
+ const b=e.target.closest("[data-a]");if(b){A[b.dataset.a](b.dataset.i);sync();render()}});
+document.addEventListener("change",e=>{const t=e.target,c=t.dataset.c;if(!c)return;C[c](t.dataset.i,t.value);sync();if(!["cust","pay"].includes(c))render()});
+document.addEventListener("submit",e=>{const f=e.target.dataset.f;if(!f)return;e.preventDefault();const m=H[f](Object.fromEntries(new FormData(e.target)));if(typeof m=="string")toast(m);sync();render()});
+window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(TABS.some(t=>t[0]==h)){tab=h;render()}});
+sync();render();
+</script>
+</body>
+</html>
